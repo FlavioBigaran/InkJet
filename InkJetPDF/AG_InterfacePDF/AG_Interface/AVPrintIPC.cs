@@ -1,8 +1,9 @@
-﻿using System;
+﻿using AG_Interface;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
-using Ttp.Meteor.MeteorMonoPrint;
+
 
 namespace W8AVMOM
 {
@@ -11,6 +12,7 @@ namespace W8AVMOM
     {
        
         public  string req_load_ImagePath;
+        public string req_create_crosses;
         public int req_printlane;
         private bool req_home;
         private int req_spit;
@@ -34,6 +36,13 @@ namespace W8AVMOM
         public void LoadImage(string fileandpath,double printwidth,double printheight)
         {
             req_load_ImagePath = fileandpath;
+            Printwidth = printwidth;
+            Printheight = printheight;
+        }
+
+        public void CreateLRCrosses(string crossesstring, double printwidth, double printheight)
+        {
+            req_create_crosses = crossesstring;
             Printwidth = printwidth;
             Printheight = printheight;
         }
@@ -82,9 +91,12 @@ namespace W8AVMOM
         }
 
 
-        public void HandleTasks(FormMeteorMonoPrint MeteorMainThread)
-        {
 
+
+        public void HandleTasks(Form1 MeteorMainThread)
+        {
+        
+ ///* todo implement on AGI
             if (req_home)
             {
                 MeteorMainThread.SetHome();
@@ -103,7 +115,7 @@ namespace W8AVMOM
                 try
                 {
                     MeteorMainThread.LoadImage(req_load_ImagePath, Printwidth, Printheight);
-                    PreviewImage = new Bitmap(MeteorMainThread.pictureBoxPrintData.Image);
+                    PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
                     FullImageWidth = MeteorMainThread.GetImageWidth();
                     FullImageHeight = MeteorMainThread.GetImageHeight();
                     MeteorMainThread.PreloadPrintJob();
@@ -114,6 +126,26 @@ namespace W8AVMOM
                 req_load_ImagePath = null;
             }
 
+            if (req_create_crosses != null)
+            {
+                try
+                {
+                    MeteorMainThread.CreateLRCrosses(req_create_crosses, Printwidth, Printheight);
+                    PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
+                    FullImageWidth = MeteorMainThread.GetImageWidth();
+                    FullImageHeight = MeteorMainThread.GetImageHeight();
+                    MeteorMainThread.PreloadPrintJob();
+                }
+                catch(Exception e)
+                {
+                    string error = e.ToString();
+                }//ooops
+
+                req_create_crosses = null;
+            }
+
+
+
             if (req_printlane >= 0)
             {
                 if(pixelshift == 0)
@@ -123,7 +155,7 @@ namespace W8AVMOM
                 req_printlane = -1;
             }
         }
-        
+     //   */
     }
 
 }

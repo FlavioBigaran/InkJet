@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MeteorMonoPrint")]
+[assembly: AssemblyTitle("AG_Interface")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("TTP Meteor")]
-[assembly: AssemblyProduct("MeteorMonoPrint")]
-[assembly: AssemblyCopyright("Copyright © TTP Meteor 2013")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("AG_Interface")]
+[assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("AA3E9718-7219-4F5C-938F-7D6033DB9061")]
+[assembly: Guid("0351c162-a838-448e-a9cf-605169674635")]
 
 // Version information for an assembly consists of the following four values:
 //

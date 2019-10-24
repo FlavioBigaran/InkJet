@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace Ttp.Meteor.MeteorMonoPrint
+namespace AG_Interface
 {
     static class Program
     {
@@ -14,7 +14,7 @@ namespace Ttp.Meteor.MeteorMonoPrint
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormMeteorMonoPrint());
+            Application.Run(new Form1());
         }
     }
 }
