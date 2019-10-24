@@ -23,15 +23,36 @@ namespace AG_Interface
         public Form1()
         {
             InitializeComponent();
+            /* no autostart
+            AGI = new ArrayGraphicsInterface(listBox1);
+            string statusmassage="";
+            if (AGI.connected)
+             statusmassage="Inkjet Connected";
+            else
+                statusmassage="Inkjet Problem; Cannot connect";
+
+               listBox1.Items.Add(statusmassage); 
+            this.Text = " " + statusmassage;
+            timer1.Enabled = true;     
+             * */
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            timer1.Enabled = true;
-            AGI = new ArrayGraphicsInterface();
-            if (AGI.connected) listBox1.Items.Add("Connected");
-           
+
+            AGI = new ArrayGraphicsInterface(listBox1);
+            string statusmassage = "";
+            if (AGI.connected)
+            {
+                statusmassage = "Inkjet Connected";
+            }
+            else
+                statusmassage = "Inkjet Problem; Cannot connect";
+            listBox1.Items.Add(statusmassage);
+            this.Text = " " + statusmassage;
+            timer1.Enabled = true;                  
         }
+
         /// <summary>
         /// Create Flexolocic IPC server
         /// </summary>
@@ -87,7 +108,11 @@ namespace AG_Interface
             //AGI interface handling
             try
             {
-                AGMessage message = AGI.ReadMessage();
+                AGMessage message = null ;
+                    
+                message = AGI.ReadMessage(AGI.networkStream);
+           //     if (message == null) message = AGI.ReadMessage(AGI.networkStreamExtra);
+
                 if(message!=null)
                 {
                   
@@ -113,19 +138,30 @@ namespace AG_Interface
                             MessageString += message.MessageData[i].ToString("X") + " ";
                         }
                     }
-                    listBox1.Items.Add(MessageString);
-                    if (message.MessageMsgID == 0x06)//error
+                  
+                    if (message.MessageMsgID == 0x06)//next buffer fillable
                     {
                         byte pageprinted = message.MessageData[26];
                         if (pageprinted == 1)
                         {
+
+
+
                             //load new print buffer
                          //   listBox1.Items.Add("refill buffer:" + AGI.CurrentBufferNumber.ToString());
-                           // AGI.FillNextPrintBuffer();
+                            AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
+                            MessageString += " REFILL P1";
                            // Bufferdata.Image = AGI.GetLastBufferDateAsImage();
                         }
+                        if (pageprinted == 0)
+                        {
+                            //2nd prefill line                
+                            AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
+                            MessageString += " REFILL P0";
+                        }
                     }
-                        
+                         
+                    listBox1.Items.Add(MessageString);
                 }                
             }
             catch (Exception err)
@@ -134,17 +170,29 @@ namespace AG_Interface
             }              
         }
 
-        internal void StartScanLane(int req_printlane, int pixelshift)
+        internal void InitializePrint()
+        {
+            // throw new NotImplementedException();
+            AGI.InitializePrint();
+            AGI.WhiteTreshhold = AVPrintIPCObject.WhiteTreshhold;
+        }
+  
+        internal void StartScanLane(int req_printlane, int pixelshift,bool cal)
         {
            // throw new NotImplementedException();
-            AGI.StartPrintLaneNoWait(req_printlane);
+            AGI.UploadLaneNoWait(req_printlane,AVPrintIPCObject.Calibrationlines);
         }
 
-        internal void StartScanLane(int req_printlane)
+        internal void StartScanLane(int req_printlane,bool cal)
         {
-            AGI.StartPrintLaneNoWait(req_printlane);
+            AGI.UploadLaneNoWait(req_printlane,cal);
         }
 
+        internal void DeactivateHead()
+        {
+            // throw new NotImplementedException();
+            AGI.DeactivateHead();
+        }
         internal void PreloadPrintJob()
         {
            // throw new NotImplementedException();
@@ -157,7 +205,7 @@ namespace AG_Interface
 
         internal int GetImageWidth()
         {
-            return AGI.FullBitmapHeight;
+            return AGI.FullBitmapWidth;
         }
 
         internal void LoadImage(string req_load_ImagePath, double printwidth, double printheight)
@@ -187,6 +235,25 @@ namespace AG_Interface
             drawEasyregcrossat(x2, y2, crosssize, FullBitmap);
             drawEasyregcrossat((x1 + x2) / 2, y1, crosssize, FullBitmap);
 
+            for (int i = 0; i < pixelsy; i++)
+            {
+                FullBitmap.SetPixel(3, i, Color.Black);
+                FullBitmap.SetPixel(4, i, Color.Black);
+                FullBitmap.SetPixel(5, i, Color.Black);
+                FullBitmap.SetPixel(pixelsx-1, i, Color.Black);
+                FullBitmap.SetPixel(pixelsx-2, i, Color.Black);
+                FullBitmap.SetPixel(pixelsx-3, i, Color.Black);
+            }
+
+            Graphics g = Graphics.FromImage(FullBitmap);
+            Rectangle printrect = new Rectangle(x1 + (crosssize * 4), y2 - (crosssize), crosssize * 10, crosssize*2);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            g.DrawString(crossesstring,new Font("Tahoma",crosssize),Brushes.Black,printrect);
+            g.Flush();
+
+
             AGI.SetFullBitmap = FullBitmap;
             pictureBox1.Image = FullBitmap;
         }
@@ -207,9 +274,9 @@ namespace AG_Interface
         }
         private void drawEasyregcrossat(int xm, int ym, int crosssize, Bitmap FullBitmap)
         {
-            for (int i = 0; i < crosssize; i++)
+            for (int i = 1; i < crosssize; i++)
             {
-                for (int j = 0; j < crosssize; j++)
+                for (int j = 1; j < crosssize; j++)
                 {
                     FullBitmap.SetPixel(xm + i, ym + j, Color.Black);
                     FullBitmap.SetPixel(xm - i, ym - j, Color.Black);
@@ -233,13 +300,7 @@ namespace AG_Interface
             AGI.SendMessage(0x58);
         }
 
-        private void button5_Click(object sender, EventArgs e)
-        {
-
-            AGI.DirectPrintBufferNoWait(listBox1);        
-            timer1.Enabled = true;          
-        }
-
+      
         private void button3_Click(object sender, EventArgs e)
         {
             AGI.SendMessage(0x16);
@@ -279,15 +340,15 @@ namespace AG_Interface
                 #endregion
                 //Convert the file
                 ConvertSinglePDFtoBitmap(PDFFilename);
-                AGI.SetFullBitmap=FullBitmap;
-            }
-            
+              if(AGI!=null)  AGI.SetFullBitmap=FullBitmap;
+            }            
         }
 
         /// <summary>Convert a single file</summary>
         /// <remarks>this function PRETEND that the filename is right!</remarks>
         ///
         private Bitmap FullBitmap;
+        public string bitmapfilename=@"C:\W8 AVMOM\W8 AVMOM\images\convertedpng.bmp";
         private void ConvertSinglePDFtoBitmap(string filename)
         {
             bool Converted = false;
@@ -303,22 +364,40 @@ namespace AG_Interface
             converter.JPEGQuality = (int)10;
             converter.OutputFormat = "png256";
             System.IO.FileInfo input = new FileInfo(filename);
-            string output = string.Format("{0}\\{1}{2}", input.Directory, input.Name, extension);
-            //If the output file exist alrady be sure to add a random name at the end until is unique!
-            while (File.Exists(output))
-            {
-                output = output.Replace(extension, string.Format("{1}{0}", extension, DateTime.Now.Ticks));
-            }
+          
            
-            //!!! converteren at png256. Result is 8pp indexed when bitmap is opened.
-            converter.ResolutionX = 150;
-            converter.ResolutionY = 150;
-            Converted = converter.Convert(input.FullName, output);
+            string output = string.Format("{0}\\{1}{2}", input.Directory, input.Name, extension);
+
+            while (File.Exists(output))
+                {
+                    output = output.Replace(extension, string.Format("{1}{0}", extension, DateTime.Now.Ticks));
+                }
+            System.IO.FileInfo bitmapfilenameinfo = new FileInfo(output);
+
+            if (!bitmapfilenameinfo.Exists)
+            {
+
+                //If the output file exist alrady be sure to add a random name at the end until is unique!
+                /*
+                
+               */
+                //!!! converteren at png256. Result is 8pp indexed when bitmap is opened.
+                converter.ResolutionX = 300;//190.5
+                converter.ResolutionY = 300;
+                Converted = converter.Convert(input.FullName, output);
+            }
+            else
+            {
+                Converted = true;
+            }
+
+
         //    txtArguments.Text = converter.ParametersUsed;
             if (Converted)
             {
              //   lblInfo.Text = string.Format("{0}:File converted!", DateTime.Now.ToShortTimeString());
              //   txtArguments.ForeColor = Color.Black;
+                if(AVPrintIPCObject!=null) AVPrintIPCObject.ConvertedFile = output;
                 FullBitmap = new Bitmap(output);
                 pictureBox1.Image = FullBitmap;
                 Color c = FullBitmap.GetPixel(10, 20);//a test..
@@ -336,21 +415,22 @@ namespace AG_Interface
 
         }
 
-        private void PrintLane_Click(object sender, EventArgs e)
-        {
-            AGI.DebugStartPrintLaneNoWait(0);
-            Bufferdata.Image = AGI.GetLastBufferDateAsImage();
-        }
         int FillBufferFromImageCountBuffNr=0;
         private void button1_Click_1(object sender, EventArgs e)
         {
-            AGI.FillBufferFromImage(0, FillBufferFromImageCountBuffNr++);
-            Bufferdata.Image = AGI.GetLastBufferDateAsImage();
+           
         }
 
         private void ResetBuffers_Click(object sender, EventArgs e)
         {
             AGI.SendMessage(0x86);
         }
+
+        internal void StartPrint()
+        {
+            AGI.StartPrint();
+        }
+
+      
     }
 }

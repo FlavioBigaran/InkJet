@@ -16,33 +16,46 @@ namespace W8AVMOM
         public int req_printlane;
         private bool req_home;
         private int req_spit;
+        private bool req_initializeprint;
+        private bool req_startprint;
+        private bool req_deactivate;
         public int printlane;
         public int pixelshift;
 
-        public Bitmap PreviewImage;
+    //    public Bitmap PreviewImage;
         public int FullImageWidth;
         public int FullImageHeight;
         public static object thisAVPrintIPC;
         public double Printwidth;
         public double Printheight;
+        public int WhiteTreshhold;
+        public string ConvertedFile {get;set;}
+        public bool Converting { get; set; }
+        public bool Calibrationlines{get;set;}
+        public bool PrintheadConnected { get; set; }
 
         public AVPrintIPC()
         {
             thisAVPrintIPC = this;
             req_printlane = -1;
             req_load_ImagePath = null;
+            SetWhiteLevelPercentage(90);
         }
 
         public void LoadImage(string fileandpath,double printwidth,double printheight)
         {
             req_load_ImagePath = fileandpath;
+            Converting = true;
             Printwidth = printwidth;
             Printheight = printheight;
         }
 
+
+
         public void CreateLRCrosses(string crossesstring, double printwidth, double printheight)
         {
             req_create_crosses = crossesstring;
+            Converting = true;
             Printwidth = printwidth;
             Printheight = printheight;
         }
@@ -59,6 +72,11 @@ namespace W8AVMOM
             pixelshift = pixelshiftnr;
         }
 
+        public void SetWhiteLevelPercentage(int whiteLevel)
+        {
+            WhiteTreshhold = (whiteLevel * 3 * 255) / 100;
+        }
+
         public void PrintShiftLane(int lanenr)
         {
             if (lanenr >= 0)
@@ -67,7 +85,19 @@ namespace W8AVMOM
                 printlane = lanenr;            
             }
         }
-
+        public void InitializePrint(bool calibrationlines)
+        {
+            req_initializeprint = true;
+            Calibrationlines = calibrationlines;
+        }
+        public void StartPrint() 
+        {
+            req_startprint = true;
+        }
+        public void DeactivateHead() 
+        { 
+            req_deactivate = true; 
+        }
         public void Home()
         {
             req_home = true;
@@ -76,20 +106,28 @@ namespace W8AVMOM
         {
             req_spit = number;
         }
-        public int Status { get
-            { return 1; }
+        public int Status
+        {
+            get
+            {
+                PrintheadConnected = true;//TODO get info from main.
+                if (PrintheadConnected == true) 
+                    return 1;
+                else
+                    return 0;
+            }
             set { } }
     
         public int GetLane()
         {
             return printlane;
         }
-
+/*
         public Bitmap GetPreviewImage()
         {
             return PreviewImage;
         }
-
+*/
 
 
 
@@ -103,7 +141,23 @@ namespace W8AVMOM
                 req_home = false;
             }
 
-
+           
+            if (req_deactivate)
+            {
+                MeteorMainThread.DeactivateHead();
+                req_deactivate = false;
+            }
+      
+            if (req_initializeprint)
+            {
+                MeteorMainThread.InitializePrint();
+                req_initializeprint = false;
+            }
+            if (req_startprint)
+            {
+                MeteorMainThread.StartPrint();
+                req_startprint = false;
+            }
             if (req_spit!=0)
             {
                 MeteorMainThread.Spit(req_spit);
@@ -115,13 +169,16 @@ namespace W8AVMOM
                 try
                 {
                     MeteorMainThread.LoadImage(req_load_ImagePath, Printwidth, Printheight);
-                    PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
+                 //   PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
                     FullImageWidth = MeteorMainThread.GetImageWidth();
                     FullImageHeight = MeteorMainThread.GetImageHeight();
+                    Converting = false;
                     MeteorMainThread.PreloadPrintJob();
                 }
-                catch
-                { }//ooops
+                catch(Exception err)
+                {
+                    string error = err.ToString();
+                }//ooops
 
                 req_load_ImagePath = null;
             }
@@ -131,10 +188,11 @@ namespace W8AVMOM
                 try
                 {
                     MeteorMainThread.CreateLRCrosses(req_create_crosses, Printwidth, Printheight);
-                    PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
+                  //  PreviewImage = new Bitmap(MeteorMainThread.pictureBox1.Image);
                     FullImageWidth = MeteorMainThread.GetImageWidth();
                     FullImageHeight = MeteorMainThread.GetImageHeight();
                     MeteorMainThread.PreloadPrintJob();
+                    Converting = false;
                 }
                 catch(Exception e)
                 {
@@ -149,13 +207,17 @@ namespace W8AVMOM
             if (req_printlane >= 0)
             {
                 if(pixelshift == 0)
-                    MeteorMainThread.StartScanLane(req_printlane);
+                    MeteorMainThread.StartScanLane(req_printlane, Calibrationlines);
                 else
-                    MeteorMainThread.StartScanLane(req_printlane,pixelshift);
+                    MeteorMainThread.StartScanLane(req_printlane,pixelshift,Calibrationlines);
                 req_printlane = -1;
             }
         }
      //   */
+
+
+
+       
     }
 
 }
