@@ -29,18 +29,20 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.OpenAGPrinthead = new System.Windows.Forms.Button();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.listBox1 = new System.Windows.Forms.ListBox();
+            this.button5 = new System.Windows.Forms.Button();
             this.IPCStatus = new System.Windows.Forms.TextBox();
             this.PDFConvert = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.TextBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.Bufferdata = new System.Windows.Forms.PictureBox();
+            this.PrintLane = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.ResetBuffers = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Bufferdata)).BeginInit();
@@ -48,7 +50,7 @@
             // 
             // OpenAGPrinthead
             // 
-            this.OpenAGPrinthead.Location = new System.Drawing.Point(12, 14);
+            this.OpenAGPrinthead.Location = new System.Drawing.Point(12, 12);
             this.OpenAGPrinthead.Name = "OpenAGPrinthead";
             this.OpenAGPrinthead.Size = new System.Drawing.Size(115, 23);
             this.OpenAGPrinthead.TabIndex = 0;
@@ -63,7 +65,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(261, 15);
+            this.button2.Location = new System.Drawing.Point(146, 29);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 23);
             this.button2.TabIndex = 3;
@@ -73,7 +75,7 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(342, 15);
+            this.button3.Location = new System.Drawing.Point(237, 29);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 23);
             this.button3.TabIndex = 4;
@@ -83,9 +85,9 @@
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(423, 15);
+            this.button4.Location = new System.Drawing.Point(517, 29);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(93, 23);
+            this.button4.Size = new System.Drawing.Size(123, 23);
             this.button4.TabIndex = 5;
             this.button4.Text = "System ready?";
             this.button4.UseVisualStyleBackColor = true;
@@ -93,16 +95,25 @@
             // 
             // listBox1
             // 
-            this.listBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.listBox1.FormattingEnabled = true;
-            this.listBox1.Location = new System.Drawing.Point(12, 44);
+            this.listBox1.Location = new System.Drawing.Point(12, 96);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(628, 353);
+            this.listBox1.Size = new System.Drawing.Size(628, 264);
             this.listBox1.TabIndex = 6;
+            // 
+            // button5
+            // 
+            this.button5.Location = new System.Drawing.Point(332, 29);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(75, 23);
+            this.button5.TabIndex = 7;
+            this.button5.Text = "button5";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // IPCStatus
             // 
-            this.IPCStatus.Location = new System.Drawing.Point(138, 16);
+            this.IPCStatus.Location = new System.Drawing.Point(12, 41);
             this.IPCStatus.Name = "IPCStatus";
             this.IPCStatus.Size = new System.Drawing.Size(115, 20);
             this.IPCStatus.TabIndex = 8;
@@ -110,28 +121,27 @@
             // 
             // PDFConvert
             // 
-            this.PDFConvert.Location = new System.Drawing.Point(659, 15);
+            this.PDFConvert.Location = new System.Drawing.Point(12, 67);
             this.PDFConvert.Name = "PDFConvert";
-            this.PDFConvert.Size = new System.Drawing.Size(202, 23);
+            this.PDFConvert.Size = new System.Drawing.Size(115, 23);
             this.PDFConvert.TabIndex = 9;
-            this.PDFConvert.Text = "PDF Converter Test";
+            this.PDFConvert.Text = "PDF Convert";
             this.PDFConvert.UseVisualStyleBackColor = true;
             this.PDFConvert.Click += new System.EventHandler(this.PDFConvert_Click);
             // 
             // lblVersion
             // 
-            this.lblVersion.Location = new System.Drawing.Point(867, 17);
+            this.lblVersion.Location = new System.Drawing.Point(146, 70);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(578, 20);
+            this.lblVersion.Size = new System.Drawing.Size(115, 20);
             this.lblVersion.TabIndex = 10;
             this.lblVersion.Text = "PDF Converter version";
             // 
             // pictureBox1
             // 
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(659, 44);
+            this.pictureBox1.Location = new System.Drawing.Point(692, 12);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(786, 518);
+            this.pictureBox1.Size = new System.Drawing.Size(716, 465);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 11;
             this.pictureBox1.TabStop = false;
@@ -139,19 +149,38 @@
             // 
             // Bufferdata
             // 
-            this.Bufferdata.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.Bufferdata.Location = new System.Drawing.Point(12, 408);
+            this.Bufferdata.Location = new System.Drawing.Point(12, 369);
             this.Bufferdata.Name = "Bufferdata";
-            this.Bufferdata.Size = new System.Drawing.Size(628, 154);
+            this.Bufferdata.Size = new System.Drawing.Size(628, 145);
             this.Bufferdata.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.Bufferdata.TabIndex = 12;
             this.Bufferdata.TabStop = false;
             // 
+            // PrintLane
+            // 
+            this.PrintLane.Location = new System.Drawing.Point(413, 29);
+            this.PrintLane.Name = "PrintLane";
+            this.PrintLane.Size = new System.Drawing.Size(98, 23);
+            this.PrintLane.TabIndex = 13;
+            this.PrintLane.Text = "TestPrintLane";
+            this.PrintLane.UseVisualStyleBackColor = true;
+            this.PrintLane.Click += new System.EventHandler(this.PrintLane_Click);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(413, 67);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 14;
+            this.button1.Text = "FillBuffer";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            // 
             // ResetBuffers
             // 
-            this.ResetBuffers.Location = new System.Drawing.Point(522, 15);
+            this.ResetBuffers.Location = new System.Drawing.Point(517, 67);
             this.ResetBuffers.Name = "ResetBuffers";
-            this.ResetBuffers.Size = new System.Drawing.Size(118, 23);
+            this.ResetBuffers.Size = new System.Drawing.Size(123, 23);
             this.ResetBuffers.TabIndex = 15;
             this.ResetBuffers.Text = "ResetBuffers";
             this.ResetBuffers.UseVisualStyleBackColor = true;
@@ -163,20 +192,21 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1457, 574);
             this.Controls.Add(this.ResetBuffers);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.PrintLane);
             this.Controls.Add(this.Bufferdata);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.PDFConvert);
             this.Controls.Add(this.IPCStatus);
+            this.Controls.Add(this.button5);
             this.Controls.Add(this.listBox1);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.OpenAGPrinthead);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "InkJet Status";
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Bufferdata)).EndInit();
             this.ResumeLayout(false);
@@ -192,10 +222,13 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.Button button5;
         private System.Windows.Forms.TextBox IPCStatus;
         private System.Windows.Forms.Button PDFConvert;
         private System.Windows.Forms.TextBox lblVersion;
         internal System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Button PrintLane;
+        private System.Windows.Forms.Button button1;
         protected System.Windows.Forms.PictureBox Bufferdata;
         private System.Windows.Forms.Button ResetBuffers;
     }
