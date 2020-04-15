@@ -189,7 +189,13 @@ namespace AG_Interface
                 PalleteEntryIsBlack[i] = intensity < WhiteTreshhold;
             }
         }
+        public void SetXcalibration(double factor)
+        {
+            xcalibrationfactor = factor;
+        }
+
         public bool MirrorredX = true;
+        public double xcalibrationfactor = 1.01;//bigger factor is smaller image
         unsafe public bool FillBufferFromImage(double lane, int buffernr,bool calibrationlines)
         {
             if (FullBitmap.PixelFormat == PixelFormat.Format32bppArgb)
@@ -211,11 +217,13 @@ namespace AG_Interface
                     {
                         for (int j = 0; j < BufferPixelDataColumcount; j++)
                         {
-                            int x = basex + j;                           
+                            double x = basex + j;
+                            x = x * xcalibrationfactor;
+
                             if ((x >= 0) && (x < FullBitmapWidth))
                             {
                                 byte* row = scan0 + (y * stride);
-                                if (!MirrorredX) pixelR=row[x]; else pixelR = row[FullBitmapWidth - x - 1];
+                                if (!MirrorredX) pixelR=row[(int)x]; else pixelR = row[FullBitmapWidth - (int) x - 1];
                                 if (PalleteEntryIsBlack[pixelR]) Setpixel(BufferPixelDataColumcount - j + 1 , i, BufferPixelData);
                             }
                             if (calibrationlines)

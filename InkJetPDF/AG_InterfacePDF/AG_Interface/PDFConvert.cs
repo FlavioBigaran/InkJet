@@ -144,13 +144,11 @@ namespace PdfToImage
         public int RenderingThreads
         {
             get { return _iRenderingThreads; }
-			set
-			{
+            set {
                 if (value == 0)
                     _iRenderingThreads = Environment.ProcessorCount;
                 else
-					_iRenderingThreads = value;
-			}
+                    _iRenderingThreads = value; }
         }
         private bool _bFitPage;
         private bool _bThrowOnlyException = false;
@@ -313,8 +311,7 @@ namespace PdfToImage
         public bool UseMutex
         {
             get { return mutex != null; }
-			set
-			{
+            set {
                 if (!value)//if i don't want to use it
                 {
                     if (mutex != null)//if it exist

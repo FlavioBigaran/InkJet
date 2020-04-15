@@ -19,7 +19,7 @@ namespace AG_Interface
     {
 
         ArrayGraphicsInterface AGI;
-        PDFConvert converter = new PDFConvert();
+        private PDFConvert converter = null;// = new PDFConvert();
         public Form1()
         {
             InitializeComponent();
@@ -172,7 +172,11 @@ namespace AG_Interface
         {
             AGI.SetContrast((byte)req_contrast);
         }
-
+        internal void SetXCalibration(double xcal)
+        {
+            AGI.SetXcalibration(xcal);
+        }
+        
         internal void InitializePrint()
         {
             // throw new NotImplementedException();
@@ -321,7 +325,9 @@ namespace AG_Interface
         {
             AGI.SendMessage(0x16);
         }
-        public string PDFFilename =  "C:\\W8 AVMOM\\W8 AVMOM\\Images\\MarkenValeLabel[2].pdf";
+
+
+        public string PDFFilename = "C:\\W8 AVMOM\\W8 AVMOM\\Images\\20001 Flexologic.pdf";
         private void PDFConvert_Click(object sender, EventArgs e)
    
         {
@@ -336,6 +342,8 @@ namespace AG_Interface
                 return;
             }
             //Ok now check what version is!
+
+            converter = new PDFConvert();
             GhostScriptRevision version = converter.GetRevision();
             lblVersion.Text = version.intRevision.ToString() + " " + version.intRevisionDate;
             #endregion
@@ -357,7 +365,8 @@ namespace AG_Interface
                 //Convert the file
                 ConvertSinglePDFtoBitmap(PDFFilename);
                 AGI.SetFullBitmap=FullBitmap;
-            }            
+            }
+            converter = null;
         }
 
         /// <summary>Convert a single file</summary>
@@ -365,14 +374,15 @@ namespace AG_Interface
         ///
         private Bitmap FullBitmap;
         public string bitmapfilename=@"C:\W8 AVMOM\W8 AVMOM\images\convertedpng.bmp";
+        public string conversiondirectory = @"C:\W8 AVMOM\tempconvert";
         private void ConvertSinglePDFtoBitmap(string filename)
         {
             bool Converted = false;
             string extension = ".png";
             //Setup the converter
-      
-                converter.RenderingThreads = -1;  
-                converter.TextAlphaBit = -1;
+            converter = new PDFConvert();
+            converter.RenderingThreads = -1;  
+            converter.TextAlphaBit = -1;
             converter.OutputToMultipleFile = false;
             converter.FirstPageToConvert = -1;
             converter.LastPageToConvert = -1;
@@ -380,39 +390,41 @@ namespace AG_Interface
             converter.JPEGQuality = (int)10;
             converter.OutputFormat = "png256";
             System.IO.FileInfo input = new FileInfo(filename);
-          
-           
-            string output = string.Format("{0}\\{1}{2}", input.Directory, input.Name, extension);
 
+            int extensioncounter = 0;
+            string output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
+        
             while (File.Exists(output))
                 {
-                    output = output.Replace(extension, string.Format("{1}{0}", extension, DateTime.Now.Ticks));
+                try
+                {
+                    File.Delete(output);//throw away for next time.
                 }
+                catch
+                {
+                    //not allowed for some reason
+                }            
+                extensioncounter++; //do not use the just deleted file
+                output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
+            }
             System.IO.FileInfo bitmapfilenameinfo = new FileInfo(output);
 
             if (!bitmapfilenameinfo.Exists)
-            {
-
-                //If the output file exist alrady be sure to add a random name at the end until is unique!
-                /*
-                
-               */
+            {       
                 //!!! converteren at png256. Result is 8pp indexed when bitmap is opened.
                 converter.ResolutionX = 300;//190.5
                 converter.ResolutionY = 300;
                 Converted = converter.Convert(input.FullName, output);
+                
             }
             else
             {
                 Converted = true;
             }
+            converter = null;
 
-
-        //    txtArguments.Text = converter.ParametersUsed;
             if (Converted)
             {
-             //   lblInfo.Text = string.Format("{0}:File converted!", DateTime.Now.ToShortTimeString());
-             //   txtArguments.ForeColor = Color.Black;
                 if(AVPrintIPCObject!=null) AVPrintIPCObject.ConvertedFile = output;
                 FullBitmap = new Bitmap(output);
                 pictureBox1.Image = FullBitmap;
@@ -421,8 +433,6 @@ namespace AG_Interface
             }
             else
             {
-             //   lblInfo.Text = string.Format("{0}:File NOT converted! Check Args!", DateTime.Now.ToShortTimeString());
-             //   txtArguments.ForeColor = Color.Red;
             }
         }
 

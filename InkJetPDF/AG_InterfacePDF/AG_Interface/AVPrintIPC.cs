@@ -15,6 +15,7 @@ namespace W8AVMOM
         public string req_create_crosses;
         public int req_printlane;
         public int req_contrast;
+        public double req_xcal;
         public int req_programxml;
         public string programxmlpath;
         private bool req_home;
@@ -98,7 +99,14 @@ namespace W8AVMOM
                 req_contrast = contrast;            
             }
         }
-
+        //bigger value is smaller image
+        public void SetXCal(int xcal)
+        {
+            if (xcal >= 0)
+            {
+                req_xcal = xcal;
+            }
+        }
 
 
         public void ProgramXMLconfig(int xmltypecode, string fullPath)
@@ -232,6 +240,11 @@ namespace W8AVMOM
                 req_contrast = -1;
             }
 
+            if (req_xcal > 0)
+            {
+                MeteorMainThread.SetXCalibration(req_xcal);
+                req_xcal = -1;
+            }
             if (req_programxml >= 0)
             {
                 MeteorMainThread.ProgramXML(req_programxml, programxmlpath);
