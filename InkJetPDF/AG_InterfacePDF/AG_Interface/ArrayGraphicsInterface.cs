@@ -15,6 +15,7 @@ namespace AG_Interface
 {
     class ArrayGraphicsInterface
     {
+        private string ipadress = "192.168.0.2";
         private TcpClient tcpClient;
         private TcpClient tcpClientExtra;
         internal NetworkStream networkStream;
@@ -22,7 +23,14 @@ namespace AG_Interface
         public bool connected=false;
         private ListBox infobox;
        
-        public ArrayGraphicsInterface(ListBox listBox1)
+        public ArrayGraphicsInterface(ListBox listBox1, string ip) //"192.168.0.2"
+        {
+            // TODO: Complete member initialization
+            this.infobox = listBox1;
+            this.ipadress = ip;
+            _ArrayGraphicsInterface();
+        }
+        public ArrayGraphicsInterface(ListBox listBox1) //"192.168.0.2"
         {
             // TODO: Complete member initialization
             this.infobox = listBox1;
@@ -30,16 +38,24 @@ namespace AG_Interface
         }
         public void _ArrayGraphicsInterface()
         {
-            connected = ConnectToServer(10001, "192.168.0.2");//was 10001
+            connected = ConnectToServer(10001, ipadress);//was 10001
             if (!connected) //implemented for bad network
             {
                 Thread.Sleep(1000);
                 connected = ConnectToServer(10001, "192.168.2.2");
-            }      
+            }
+            infobox.Items.Add("Xcalibration: " + xcalibrationfactor.ToString());
         }
 
-        
-
+        public void ConnectIP(string ipadress)
+        {
+            connected = ConnectToServer(10001, ipadress);//was 10001
+            if (!connected) //implemented for bad network
+            {
+                infobox.Items.Add("Connection FAILED: " + ipadress);
+            }
+            infobox.Items.Add("Connected to: " + ipadress);
+        }
 
         public void  SendBuffer()
         {
@@ -195,7 +211,7 @@ namespace AG_Interface
         }
 
         public bool MirrorredX = true;
-        public double xcalibrationfactor = 1.01;//bigger factor is smaller image
+        public double xcalibrationfactor = 1.02;//bigger factor is smaller image
         unsafe public bool FillBufferFromImage(double lane, int buffernr,bool calibrationlines)
         {
             if (FullBitmap.PixelFormat == PixelFormat.Format32bppArgb)
@@ -229,7 +245,7 @@ namespace AG_Interface
                             if (calibrationlines)
                             {
                                 if ((y % 150) == 0x00) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug
-                                if ((x % 150) == 0x00) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug           
+                                if ((x % 150) < 3.00) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug           
                             }
                         }
                     }

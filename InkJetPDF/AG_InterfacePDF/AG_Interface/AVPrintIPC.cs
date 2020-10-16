@@ -17,6 +17,7 @@ namespace W8AVMOM
         public int req_contrast;
         public double req_xcal;
         public int req_programxml;
+        public string req_setip = "";
         public string programxmlpath;
         private bool req_home;
         private int req_spit;
@@ -100,15 +101,21 @@ namespace W8AVMOM
             }
         }
         //bigger value is smaller image
-        public void SetXCal(int xcal)
+        public void SetXCal(double xcal)
         {
             if (xcal >= 0)
             {
                 req_xcal = xcal;
             }
         }
-
-
+        public void ConnectToIP(string ip)
+        {
+            if (ip.Length > 1)
+            {
+                req_setip = ip;
+            }
+        }
+        
         public void ProgramXMLconfig(int xmltypecode, string fullPath)
         {
             if (xmltypecode >= 0)
@@ -240,10 +247,10 @@ namespace W8AVMOM
                 req_contrast = -1;
             }
 
-            if (req_xcal > 0)
+            if (req_xcal > 0.40)
             {
                 MeteorMainThread.SetXCalibration(req_xcal);
-                req_xcal = -1;
+                req_xcal = -1.00;
             }
             if (req_programxml >= 0)
             {
@@ -251,7 +258,13 @@ namespace W8AVMOM
                 req_programxml = -1;
             }
 
-            
+            if (req_setip.Length>1) //connect to specific IP
+            {
+                MeteorMainThread.SetIP(req_setip);
+                req_setip = "";
+            }
+
+
 
             if (req_printlane >= 0)
             {

@@ -23,6 +23,7 @@ namespace AG_Interface
         public Form1()
         {
             InitializeComponent();
+            listBox1.Items.Add("InkJet Compatible to AVMOM V2.5.7.08"); 
             AGI = new ArrayGraphicsInterface(listBox1);
             string statusmassage="";
             if (AGI.connected)
@@ -195,6 +196,10 @@ namespace AG_Interface
             AGI.ProgramXML(programxmltype, programxmlpath);
         }
 
+        internal void  SetIP(string ipadress)
+        {
+          AGI = new ArrayGraphicsInterface(listBox1, ipadress);
+        }
         internal void StartScanLane(int req_printlane,bool cal)
         {
             AGI.UploadLaneNoWait(req_printlane,cal);
