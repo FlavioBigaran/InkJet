@@ -13,7 +13,7 @@ namespace AG_Interface
 {
 	class ArrayGraphicsInterface
 	{
-		private readonly string ipadress = "192.168.0.2";
+		private readonly string ipadress = "10.0.7.1";
 		private TcpClient tcpClient;
 		internal NetworkStream networkStream;
 		public bool connected=false;
@@ -34,11 +34,13 @@ namespace AG_Interface
 		}
 		public void _ArrayGraphicsInterface()
 		{
+            infobox.Items.Add("Connect to : " + ipadress);
 			connected = ConnectToServer(10001, ipadress);//was 10001
 			if (!connected) //implemented for bad network
 			{
+                infobox.Items.Add("Failed, try :" + ipadress);
 				Thread.Sleep(1000);
-				connected = ConnectToServer(10001, "192.168.2.2");
+				connected = ConnectToServer(10001, "192.168.0.2");
 			}
 			infobox.Items.Add("Xcalibration: " + xcalibrationfactor.ToString());
 		}
@@ -216,31 +218,76 @@ namespace AG_Interface
 				int stride = imageData.Stride;
 				int basex = buffernr * BufferPixelDataColumcount;
 				int basey = (int)(lane * BufferPixelDataColumsize);
+                int maxX = FullBitmap.Width;
 				byte pixelR=0;
-				for (int i = 0; i < BufferPixelDataColumsize ; i++)
-				{
-					int y = basey + i;
-					if ((y >= 0) && (y < FullBitmapHeight))
-					{
-						for (int j = 0; j < BufferPixelDataColumcount; j++)
-						{
-							double x = basex + j;
-							x *= xcalibrationfactor;
+                int calibrationblancx = (int) ((xcalibrationfactor - 1.00) * BufferPixelDataColumcount);
 
-							if ((x >= 0) && (x < FullBitmapWidth))
-							{
-								byte* row = scan0 + (y * stride);
-								if (!MirrorredX) pixelR=row[(int)x]; else pixelR = row[FullBitmapWidth - (int) x - 1];
-								if (PalleteEntryIsBlack[pixelR]) Setpixel(BufferPixelDataColumcount - j + 1 , i, BufferPixelData);
-							}
-							if (calibrationlines)
-							{
-								if ((y % 150) == 0x00) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug
-								if ((x % 150) < 3.00) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug
-							}
-						}
-					}
-				}
+
+
+                /*
+                if (calibrationlines)
+                {
+                    for (int i = 0; i < BufferPixelDataColumsize; i++)
+                    {
+                        for (double x = 0; x < FullBitmapWidth; x += 150 * xcalibrationfactor)
+                        {
+                            Setpixel((int)(BufferPixelDataColumcount - x + 1 - calibrationblancx), i, BufferPixelData);
+                        }
+                    }
+                }
+                */
+                int boxlinewidht = 30;
+                for (int i = 0; i < BufferPixelDataColumsize; i++)
+                {
+                    int y = basey + i;
+                    double x = 0;
+                    int xp = 0;
+                    bool Isbalck = false;
+                    if ((y >= 0) && (y < FullBitmapHeight))
+                    {
+                        for (int j = 0; j < BufferPixelDataColumcount; j++)
+                        {
+                            x = basex + j;                     
+                            x *= xcalibrationfactor;
+
+                            if ((x >= 0) && (x < FullBitmapWidth))
+                            {
+                                byte* row = scan0 + (y * stride);
+                                if (!MirrorredX) xp = (int) x; else xp = (int) FullBitmapWidth - (int)x - 1;
+                                pixelR = row[xp];
+                                Isbalck = PalleteEntryIsBlack[pixelR];
+                                if (calibrationlines)
+                                {
+                                    if ((xp < boxlinewidht) || (xp > FullBitmapWidth - boxlinewidht) || (y < boxlinewidht) || (y > FullBitmapHeight - boxlinewidht)) Isbalck = true;
+                                }
+                                /*
+                                if (calibrationlines)
+                                {
+                                    if ((y % 150) < 2.00)
+                                    {
+                                        Isbalck = true;
+                                    }
+                                    else
+                                    {
+                                        if (((FullBitmapWidth-x) % 150 < 3)) Isbalck = true;
+                                    }
+                                }
+                                 */
+                                if(Isbalck) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);
+
+
+                           /*     if (!MirrorredX) pixelR = row[(int)x]; else pixelR = row[FullBitmapWidth - (int)x - 1];
+                                if (PalleteEntryIsBlack[pixelR]) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);
+
+                                if (calibrationlines)
+                                {
+                                    if ((y % 150) < 2.00 ) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug
+                                    if (((FullBitmapWidth - x) % 150) < 3.00) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);  
+                                }*/
+                            }
+                        }
+                    }
+                }
 				FullBitmap.UnlockBits(imageData);
 			}
 			return true;

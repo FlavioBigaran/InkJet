@@ -191,6 +191,7 @@ namespace AG_Interface
 			string input = "flip";
 			int extensioncounter = 0;
 			string output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input, extensioncounter, extension);
+            string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
 
 			while (File.Exists(output))
 			{
@@ -204,6 +205,7 @@ namespace AG_Interface
 				}
 				extensioncounter++; //do not use the just deleted file
 				output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input, extensioncounter, extension);
+                outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
 			}
 			FileInfo bitmapfilenameinfo = new FileInfo(output);
 
@@ -213,16 +215,33 @@ namespace AG_Interface
 				AGI.SetFullBitmap = FullBitmap;
 				FullBitmap.Save(output);
 			}
-			if (AVPrintIPCObject != null)
-				AVPrintIPCObject.ConvertedFile = output;
+            if (AVPrintIPCObject != null)
+            {
+                AVPrintIPCObject.ConvertedFile = output;
+                AVPrintIPCObject.ConvertedFileSmall = outputsmall;
+            }
 			pictureBox1.Image = FullBitmap;
 			converter = null;
+
+            double w = FullBitmap.Width;
+            double h = FullBitmap.Height;
+            if ((w + h) > 6000)
+            {
+                double scaledown = (w + h) / 6000;
+                w = w / scaledown;
+                h = h / scaledown;
+
+            }
+
+            Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
+            smallbm.Save(outputsmall);
+
 		}
 
 		public void CreateLRCrosses(string crossesstring, double printwidth, double printheight,int crosstype)
 		{
 			bool LRmarks = false;
-			int dpixy = 300;
+			int dpixy = 299; //the print of the marks is too large when 300 dpi is used! (maybe the converter uses smaller DPI)
 			int pixelsx = (int) (printwidth * dpixy / 25400);
 			int pixelsy = (int)(printheight * dpixy / 25400);
 			FullBitmap = new Bitmap(pixelsx, pixelsy,System.Drawing.Imaging.PixelFormat.Format32bppArgb);
@@ -374,6 +393,7 @@ namespace AG_Interface
 
 			int extensioncounter = 0;
 			string output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
+            string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
 
 			while (File.Exists(output))
 			{
@@ -387,6 +407,7 @@ namespace AG_Interface
 				}
 				extensioncounter++; //do not use the just deleted file
 				output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
+                outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
 			}
 			FileInfo bitmapfilenameinfo = new FileInfo(output);
 
@@ -406,10 +427,28 @@ namespace AG_Interface
 
 			if (Converted)
 			{
-				if(AVPrintIPCObject!=null) AVPrintIPCObject.ConvertedFile = output;
+                if (AVPrintIPCObject != null)
+                {
+                    AVPrintIPCObject.ConvertedFile = output;
+                    AVPrintIPCObject.ConvertedFileSmall = outputsmall;
+                }
 				FullBitmap = new Bitmap(output);
 				pictureBox1.Image = FullBitmap;
 				FullBitmap.GetPixel(10, 20);//a test..
+
+                double w = FullBitmap.Width;
+                double h = FullBitmap.Height;
+                if ((w + h) > 6000)
+                {
+                    double scaledown = (w + h) / 6000;
+                    w = w / scaledown;
+                    h = h / scaledown;
+
+                }
+
+                Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
+                smallbm.Save(outputsmall);
+
 			}
 		}
 

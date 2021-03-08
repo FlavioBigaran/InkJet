@@ -30,6 +30,7 @@ namespace W8AVMOM
 		public double Printheight;
 		public int WhiteTreshhold;
 		public string ConvertedFile { get; set; }
+        public string ConvertedFileSmall { get; set; }
 		public bool Converting { get; set; }
 		public bool Calibrationlines { get; set; }
 		public bool PrintheadConnected { get; set; }
