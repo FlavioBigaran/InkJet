@@ -35,12 +35,10 @@ namespace AG_Interface
 		public void _ArrayGraphicsInterface()
 		{
             infobox.Items.Add("Connect to : " + ipadress);
-			connected = ConnectToServer(10001, ipadress);//was 10001
+			connected = ConnectToServer(10002, ipadress);//was 10001
 			if (!connected) //implemented for bad network
 			{
-                infobox.Items.Add("Failed, try :" + ipadress);
-				Thread.Sleep(1000);
-				connected = ConnectToServer(10001, "192.168.0.2");
+                infobox.Items.Add("Failed, to connect " + ipadress);
 			}
 			infobox.Items.Add("Xcalibration: " + xcalibrationfactor.ToString());
 		}
@@ -204,7 +202,7 @@ namespace AG_Interface
 		}
 
 		public bool MirrorredX = true;
-		public double xcalibrationfactor = 1.02;//bigger factor is smaller image
+		public double xcalibrationfactor = 1.00;//bigger factor is smaller image
 		unsafe public bool FillBufferFromImage(double lane, int buffernr,bool calibrationlines)
 		{
 			if (FullBitmap.PixelFormat == PixelFormat.Format32bppArgb)
@@ -220,16 +218,13 @@ namespace AG_Interface
 				int basey = (int)(lane * BufferPixelDataColumsize);
                 int maxX = FullBitmap.Width;
 				byte pixelR=0;
-                int calibrationblancx = (int) ((xcalibrationfactor - 1.00) * BufferPixelDataColumcount);
-
-
-
+				int calibrationblancx = 0;// (int) ((xcalibrationfactor - 1.00) * BufferPixelDataColumcount);
                 /*
                 if (calibrationlines)
                 {
                     for (int i = 0; i < BufferPixelDataColumsize; i++)
                     {
-                        for (double x = 0; x < FullBitmapWidth; x += 150 * xcalibrationfactor)
+                        for (double x = 0; x < FullBitmapWidth; x += 300 )
                         {
                             Setpixel((int)(BufferPixelDataColumcount - x + 1 - calibrationblancx), i, BufferPixelData);
                         }
@@ -248,7 +243,7 @@ namespace AG_Interface
                         for (int j = 0; j < BufferPixelDataColumcount; j++)
                         {
                             x = basex + j;                     
-                            x *= xcalibrationfactor;
+                        //    x *= xcalibrationfactor; //no nore!!
 
                             if ((x >= 0) && (x < FullBitmapWidth))
                             {
@@ -673,7 +668,11 @@ namespace AG_Interface
 			{
 				networkStream.Write(b, 0, iLength);
 			}
-			catch { }
+			catch
+			{
+				string MessageString = "TCP Port Write Exception";
+				infobox.Items.Add(MessageString);
+			}
 		}
 
 		public bool CanReadByte()

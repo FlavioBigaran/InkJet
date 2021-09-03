@@ -62,6 +62,8 @@ namespace AG_Interface
 			AGI.TriggerPulseGenerator(0);
 		}
 
+		public int encoder = 0;
+		private int StatusPingIntervalCounter = 0;
 		private void timer1_Tick(object sender, EventArgs e)
 		{
 			//IPC interface to W8AVMOM
@@ -77,7 +79,7 @@ namespace AG_Interface
 				AVPrintIPCObject.HandleTasks(this);
 				IPCStatus.Text = AVPrintIPCObject.GetLane().ToString();
 			}
-
+		
 			//AGI interface handling
 			try
 			{
@@ -86,7 +88,7 @@ namespace AG_Interface
 
 				if(message!=null)
 				{
-					string MessageString ="ID:"+ message.MessageMsgID.ToString("X") + ":";
+					string MessageString =" ->Receive ID:"+ message.MessageMsgID.ToString("X") + ":";
 
 					if (message.MessageMsgID == 0x34)//error
 					{
@@ -97,6 +99,65 @@ namespace AG_Interface
 							int c = message.MessageData[i];
 							if(c!=0) MessageString += Char.ConvertFromUtf32(message.MessageData[i]);
 						}
+						listBox1.Items.Add(MessageString);
+					}
+					else if (message.MessageMsgID == 0x09)//acknowledge msg
+					{
+						MessageString = " -> ACK of ID:" + message.MessageData[0].ToString("X") + " ";
+						string lastmsg = listBox1.Items[listBox1.Items.Count - 1].ToString();
+						listBox1.Items.RemoveAt(listBox1.Items.Count - 1);
+						listBox1.Items.Add(lastmsg+MessageString);
+					}   //87	
+					else if (message.MessageMsgID == 0x87)//page loaded
+					{			
+						MessageString = " ->0x86 Page loaded, Ready to Print Page";
+						listBox1.Items.Add(MessageString);
+					}
+					else if (message.MessageMsgID == 0x26)//page loaded
+					{		
+						MessageString = " ->0x26 Ready to Print";
+						listBox1.Items.Add(MessageString);
+					}
+					else if (message.MessageMsgID == 0x0a)//what is this?
+					{
+						MessageString = " ->0x0A Uniditified Message";
+						listBox1.Items.Add(MessageString);
+					}   //87	
+					else if (message.MessageMsgID == 0x06)//next buffer fillable
+					{
+						int encoderindex = 22;
+						encoder = message.MessageData[encoderindex++];
+						encoder = (encoder<<8) + message.MessageData[encoderindex++];
+						encoder = (encoder << 8) + message.MessageData[encoderindex++];
+						encoder = (encoder << 8) + message.MessageData[encoderindex++];
+
+						byte pageprinted = message.MessageData[26];
+						if (pageprinted == 1)
+						{
+							//load new print buffer
+							AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
+							MessageString = ">>REFILL P1<< ENCODER" + encoder.ToString();
+						}
+						if (pageprinted == 0)
+						{
+							//2nd prefill line
+							AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
+							MessageString = ">>REFILL P0<< ENCODER" + encoder.ToString();
+						}
+						listBox1.Items.Add(MessageString);
+					}
+					else if (message.MessageMsgID == 0x59)//
+					{
+						int status = message.MessageData[3];
+						if(status==1)
+                        {
+							MessageString = " ->Sytem Ready To Print";
+						}
+						else
+						{
+							MessageString = " ->Sytem NOT Ready To Print";
+						}			
+						listBox1.Items.Add(MessageString);
 					}
 					else
 					{
@@ -106,28 +167,23 @@ namespace AG_Interface
 						{
 							MessageString += message.MessageData[i].ToString("X") + " ";
 						}
+						listBox1.Items.Add(MessageString);
 					}
+					listBox1.TopIndex = listBox1.Items.Count-10 ;
 
-					if (message.MessageMsgID == 0x06)//next buffer fillable
-					{
-						byte pageprinted = message.MessageData[26];
-						if (pageprinted == 1)
-						{
-							//load new print buffer
-							AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
-							MessageString += " REFILL P1";
-						}
-						if (pageprinted == 0)
-						{
-							//2nd prefill line
-							AGI.FillNextPrintBufferRLE(AVPrintIPCObject.Calibrationlines);
-							MessageString += " REFILL P0";
-						}
-					}
-					listBox1.Items.Add(MessageString);
 				}
 			}
 			catch { }
+			StatusPingIntervalCounter++;
+			if(StatusPingIntervalCounter>500)
+            {
+				StatusPingIntervalCounter = 0;
+				if(StatusPingCB.Checked)
+                {
+					AGI.SendMessage(0x58);//Status Ping
+				}
+
+			}
 		}
 
 		internal void SetContrast(int req_contrast)
@@ -241,7 +297,7 @@ namespace AG_Interface
 		public void CreateLRCrosses(string crossesstring, double printwidth, double printheight,int crosstype)
 		{
 			bool LRmarks = false;
-			int dpixy = 299; //the print of the marks is too large when 300 dpi is used! (maybe the converter uses smaller DPI)
+			int dpixy = 300; //the print of the marks is too large when 300 dpi is used! (maybe the converter uses smaller DPI)<<<Change this
 			int pixelsx = (int) (printwidth * dpixy / 25400);
 			int pixelsy = (int)(printheight * dpixy / 25400);
 			FullBitmap = new Bitmap(pixelsx, pixelsy,System.Drawing.Imaging.PixelFormat.Format32bppArgb);
