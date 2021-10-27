@@ -21,6 +21,7 @@ namespace W8AVMOM
 		private bool req_startprint;
 		private bool req_deactivate;
 		public int printlane;
+		public int req_printdir;
 		public int pixelshift;
 		public int FullImageWidth;
 		public int FullImageHeight;
@@ -30,7 +31,7 @@ namespace W8AVMOM
 		public double Printheight;
 		public int WhiteTreshhold;
 		public string ConvertedFile { get; set; }
-        public string ConvertedFileSmall { get; set; }
+		public string ConvertedFileSmall { get; set; }
 		public bool Converting { get; set; }
 		public bool Calibrationlines { get; set; }
 		public bool PrintheadConnected { get; set; }
@@ -39,6 +40,7 @@ namespace W8AVMOM
 		{
 			thisAVPrintIPC = this;
 			req_printlane = -1;
+			req_printdir = 0; //set normal
 			req_contrast = -1;
 			req_programxml = -1;
 			req_load_ImagePath = null;
@@ -79,6 +81,16 @@ namespace W8AVMOM
 		public void SetShiftLane(int pixelshiftnr)
 		{
 			pixelshift = pixelshiftnr;
+		}
+
+		public void SetNextPrintDirToReverse()
+		{
+			//the print dir is sampled at the end of the print, so we set next direction
+			req_printdir = 1;
+		}
+		public void SetNextPrintDirToNormal()
+		{
+			req_printdir = 0;
 		}
 
 		public void SetWhiteLevelPercentage(int whiteLevel)
@@ -131,6 +143,7 @@ namespace W8AVMOM
 		{
 			req_initializeprint = true;
 			Calibrationlines = calibrationlines;
+			ipcPageSendingInProgress = true;
 		}
 
 		public void StartPrint()
@@ -158,12 +171,14 @@ namespace W8AVMOM
 			get
 			{
 				PrintheadConnected = true;//TODO get info from main.
-				if (PrintheadConnected == true)
-					return 1;
-				else
-					return 0;
+				return PrintheadConnected ? 1 : 0;
 			}
 			set { }
+		}
+		internal bool ipcPageSendingInProgress;
+		public bool GetPageSendingInProgress()
+		{
+			return ipcPageSendingInProgress;
 		}
 
 		public int GetLane()
@@ -174,6 +189,15 @@ namespace W8AVMOM
 		public void HandleTasks(Form1 MeteorMainThread)
 		{
 			///* todo implement on AGI
+			///
+			if (req_printdir >= 0)
+			{
+				if (req_printdir == 0)
+					MeteorMainThread.SetPrintDirNormal();
+				if (req_printdir == 1)
+					MeteorMainThread.SetPrintDirReverse();
+				req_printdir = -1;
+			}
 			if (req_home)
 			{
 				MeteorMainThread.SetHome();
@@ -189,8 +213,10 @@ namespace W8AVMOM
 			if (req_initializeprint)
 			{
 				MeteorMainThread.InitializePrint();
+				MeteorMainThread.SetPageSendingInProgress();
 				req_initializeprint = false;
 			}
+			ipcPageSendingInProgress = MeteorMainThread.GetPageSendingInProgress();
 
 			if (req_startprint)
 			{
@@ -278,4 +304,3 @@ namespace W8AVMOM
 		}
 	}
 }
-

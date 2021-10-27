@@ -11,12 +11,12 @@ using System.IO;
 
 namespace AG_Interface
 {
-	class ArrayGraphicsInterface
+	internal class ArrayGraphicsInterface
 	{
 		private readonly string ipadress = "10.0.7.1";
 		private TcpClient tcpClient;
 		internal NetworkStream networkStream;
-		public bool connected=false;
+		public bool connected = false;
 		private readonly ListBox infobox;
 
 		public ArrayGraphicsInterface(ListBox listBox1, string ip) //"192.168.0.2"
@@ -34,11 +34,11 @@ namespace AG_Interface
 		}
 		public void _ArrayGraphicsInterface()
 		{
-            infobox.Items.Add("Connect to : " + ipadress);
+			infobox.Items.Add("Connect to : " + ipadress);
 			connected = ConnectToServer(10002, ipadress);//was 10001
 			if (!connected) //implemented for bad network
 			{
-                infobox.Items.Add("Failed, to connect " + ipadress);
+				infobox.Items.Add("Failed, to connect " + ipadress);
 			}
 			infobox.Items.Add("Xcalibration: " + xcalibrationfactor.ToString());
 		}
@@ -86,8 +86,7 @@ namespace AG_Interface
 			public byte noBufferPrefill;
 		}
 
-
-		public byte[] RASTER_BUFFER_DATA(byte BufferNum, byte ReadyToPrint, uint RasterDataSize, uint StartingByteNum, uint NumBytesToCopyBeforeJumping, uint JumpAmount, byte AddToClearList, uint PageNumber, byte GeneratePulse_1,byte GeneratePulse_2,byte[] PixelData)
+		public byte[] RASTER_BUFFER_DATA(byte BufferNum, byte ReadyToPrint, uint RasterDataSize, uint StartingByteNum, uint NumBytesToCopyBeforeJumping, uint JumpAmount, byte AddToClearList, uint PageNumber, byte GeneratePulse_1, byte GeneratePulse_2, byte[] PixelData)
 		{
 			RASTER_BUFFER_DATA_MSG msg = new RASTER_BUFFER_DATA_MSG
 			{
@@ -105,7 +104,7 @@ namespace AG_Interface
 			byte[] messagehead = StructToArray(msg);
 			byte[] message = new byte[messagehead.Length + PixelData.Length];
 			int p = 0;
-			for (int i=0; i< messagehead.Length;i++)
+			for (int i = 0; i < messagehead.Length; i++)
 			{
 				message[p++] = messagehead[i];
 			}
@@ -130,7 +129,7 @@ namespace AG_Interface
 			public byte ucGeneratePulse_2;
 		}
 
-		byte[] StructToArray(object str)
+		private byte[] StructToArray(object str)
 		{
 			int size = Marshal.SizeOf(str);
 			byte[] array = new byte[size];
@@ -141,45 +140,46 @@ namespace AG_Interface
 			return array;
 		}
 
-		int paddedcolums = 0;
-		int columnheightboudrary = 0;
-		int columnheightbytesize = 0;
+		private int paddedcolums = 0;
+		private int columnheightboudrary = 0;
+		private int columnheightbytesize = 0;
 
-		void Setpixel(int col,int row, byte[] buffer)
-		{
-			int i = (col * columnheightbytesize) + (row >> 3);
-			byte pixelbyte = (byte)( 0x80 >> (row & 7));
-			buffer[i] |= pixelbyte;
-		}
-
-		bool Getpixel(int col, int row, byte[] buffer)
+		private void Setpixel(int col, int row, byte[] buffer)
 		{
 			int i = (col * columnheightbytesize) + (row >> 3);
 			byte pixelbyte = (byte)(0x80 >> (row & 7));
-			return (( buffer[i] & pixelbyte) !=0 );
+			buffer[i] |= pixelbyte;
+		}
+
+		private bool Getpixel(int col, int row, byte[] buffer)
+		{
+			int i = (col * columnheightbytesize) + (row >> 3);
+			byte pixelbyte = (byte)(0x80 >> (row & 7));
+			return (buffer[i] & pixelbyte) != 0;
 		}
 
 		private Bitmap FullBitmap;
 		internal int FullBitmapHeight;
 		internal int FullBitmapWidth;
 		private byte[] BufferPixelData;
-		private int BufferPixelDataColumsize=0;
-		private int BufferPixelDataColumcount=0;
+		private int BufferPixelDataColumsize = 0;
+		private int BufferPixelDataColumcount = 0;
 
 		public double FullBitmapScaleX = 1.0;
 		public double FullBitmapScaleY = 1.0;
 		private bool printable = true;
-		public int WhiteTreshhold=500;
+		public int WhiteTreshhold = 500;
 
-		bool GetScaledPixelfromFullBitmap(int x, int y)
+		private bool GetScaledPixelFromFullBitmap(int x, int y)
 		{
 			double xi = FullBitmapScaleX * x;
 			double yi = FullBitmapScaleY * y;
-			if ((xi < 0) || (yi<0) || (xi>= FullBitmapWidth) || (yi>=FullBitmapHeight)) return true;//white
+			if ((xi < 0) || (yi < 0) || (xi >= FullBitmapWidth) || (yi >= FullBitmapHeight))
+				return true;//white
 			printable = true;
 			Color c = FullBitmap.GetPixel((int)xi, (int)yi);
-			int intensity =  c.R + c.G + c.B;
-			return (intensity > WhiteTreshhold); //white>50%
+			int intensity = c.R + c.G + c.B;
+			return intensity > WhiteTreshhold; //white>50%
 		}
 
 		public bool[] PalleteEntryIsBlack;//array containing indexed pallete items that are black
@@ -203,7 +203,7 @@ namespace AG_Interface
 
 		public bool MirrorredX = true;
 		public double xcalibrationfactor = 1.00;//bigger factor is smaller image
-		unsafe public bool FillBufferFromImage(double lane, int buffernr,bool calibrationlines)
+		unsafe public bool FillBufferFromImage(double lane, int buffernr, bool calibrationlines)
 		{
 			if (FullBitmap.PixelFormat == PixelFormat.Format32bppArgb)
 			{
@@ -216,73 +216,39 @@ namespace AG_Interface
 				int stride = imageData.Stride;
 				int basex = buffernr * BufferPixelDataColumcount;
 				int basey = (int)(lane * BufferPixelDataColumsize);
-                int maxX = FullBitmap.Width;
-				byte pixelR=0;
-				int calibrationblancx = 0;// (int) ((xcalibrationfactor - 1.00) * BufferPixelDataColumcount);
-                /*
-                if (calibrationlines)
-                {
-                    for (int i = 0; i < BufferPixelDataColumsize; i++)
-                    {
-                        for (double x = 0; x < FullBitmapWidth; x += 300 )
-                        {
-                            Setpixel((int)(BufferPixelDataColumcount - x + 1 - calibrationblancx), i, BufferPixelData);
-                        }
-                    }
-                }
-                */
-                int boxlinewidht = 30;
-                for (int i = 0; i < BufferPixelDataColumsize; i++)
-                {
-                    int y = basey + i;
-                    double x = 0;
-                    int xp = 0;
-                    bool Isbalck = false;
-                    if ((y >= 0) && (y < FullBitmapHeight))
-                    {
-                        for (int j = 0; j < BufferPixelDataColumcount; j++)
-                        {
-                            x = basex + j;                     
-                        //    x *= xcalibrationfactor; //no nore!!
+				int maxX = FullBitmap.Width;
+				byte pixelR = 0;
+				const int calibrationblancx = 0;
+				const int boxlinewidht = 30;
+				for (int i = 0; i < BufferPixelDataColumsize; i++)
+				{
+					int y = basey + i;
+					double x = 0;
+					int xp = 0;
+					bool Isbalck = false;
+					if ((y >= 0) && (y < FullBitmapHeight))
+					{
+						for (int j = 0; j < BufferPixelDataColumcount; j++)
+						{
+							x = basex + j;
+							//    x *= xcalibrationfactor; //no nore!!
 
-                            if ((x >= 0) && (x < FullBitmapWidth))
-                            {
-                                byte* row = scan0 + (y * stride);
-                                if (!MirrorredX) xp = (int) x; else xp = (int) FullBitmapWidth - (int)x - 1;
-                                pixelR = row[xp];
-                                Isbalck = PalleteEntryIsBlack[pixelR];
-                                if (calibrationlines)
-                                {
-                                    if ((xp < boxlinewidht) || (xp > FullBitmapWidth - boxlinewidht) || (y < boxlinewidht) || (y > FullBitmapHeight - boxlinewidht)) Isbalck = true;
-                                }
-                                /*
-                                if (calibrationlines)
-                                {
-                                    if ((y % 150) < 2.00)
-                                    {
-                                        Isbalck = true;
-                                    }
-                                    else
-                                    {
-                                        if (((FullBitmapWidth-x) % 150 < 3)) Isbalck = true;
-                                    }
-                                }
-                                 */
-                                if(Isbalck) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);
-
-
-                           /*     if (!MirrorredX) pixelR = row[(int)x]; else pixelR = row[FullBitmapWidth - (int)x - 1];
-                                if (PalleteEntryIsBlack[pixelR]) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);
-
-                                if (calibrationlines)
-                                {
-                                    if ((y % 150) < 2.00 ) Setpixel(BufferPixelDataColumcount - j + 1, i, BufferPixelData);    //debug
-                                    if (((FullBitmapWidth - x) % 150) < 3.00) Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);  
-                                }*/
-                            }
-                        }
-                    }
-                }
+							if ((x >= 0) && (x < FullBitmapWidth))
+							{
+								byte* row = scan0 + (y * stride);
+								if (!MirrorredX) xp = (int)x; else xp = (int)FullBitmapWidth - (int)x - 1;
+								pixelR = row[xp];
+								Isbalck = PalleteEntryIsBlack[pixelR];
+								if (calibrationlines)
+								{
+									if ((xp < boxlinewidht) || (xp > FullBitmapWidth - boxlinewidht) || (y < boxlinewidht) || (y > FullBitmapHeight - boxlinewidht)) Isbalck = true;
+								}
+								if (Isbalck)
+									Setpixel(BufferPixelDataColumcount - j + 1 - calibrationblancx, i, BufferPixelData);
+							}
+						}
+					}
+				}
 				FullBitmap.UnlockBits(imageData);
 			}
 			return true;
@@ -291,14 +257,15 @@ namespace AG_Interface
 		public bool FillBufferFromImageOld(double lane, int buffernr)
 		{
 			printable = false;
-			for (int i = 0; i < BufferPixelData.Length; i++) BufferPixelData[i] = 0;//clear buffer
+			for (int i = 0; i < BufferPixelData.Length; i++)
+				BufferPixelData[i] = 0;//clear buffer
 			int basex = buffernr * BufferPixelDataColumcount;
 			int basey = (int)(lane * BufferPixelDataColumsize);
 			for (int i = 0; i < BufferPixelDataColumsize; i++)
 			{
 				for (int j = 0; j < BufferPixelDataColumcount; j++)
 				{
-					bool p = GetScaledPixelfromFullBitmap(basex + j, basey + i);
+					bool p = GetScaledPixelFromFullBitmap(basex + j, basey + i);
 					if (!p) Setpixel(j, i, BufferPixelData);
 				}
 			}
@@ -309,50 +276,48 @@ namespace AG_Interface
 		{
 			SendMessage(0x16);//stop printing
 			Thread.Sleep(100);
-			byte heads = 4;
-			int columnheight = 600;//450
+			const byte heads = 4;
+			const int columnheight = 600;//450
 			int columns = FullBitmapWidth;
 			paddedcolums = columns + 50;//add 50
-			if (columnheight <= 512) columnheightboudrary = 512; else columnheightboudrary = 1024;
+			columnheightboudrary = columnheight <= 512 ? 512 : 1024;
 			columnheightbytesize = columnheightboudrary / 8;
 			int buffersize = columnheightbytesize * paddedcolums;
-			SendMessage(0x02, RASTER_BUFFER_CREATE(2, buffersize, 1, 0, heads, columnheightboudrary/32, columns, 300, false));
+			SendMessage(0x02, RASTER_BUFFER_CREATE(2, buffersize, 1, 0, heads, columnheightboudrary / 32, columns, 300, false));
 
 			BufferPixelData = new byte[buffersize];
 			BufferPixelDataColumsize = columnheight;
 			BufferPixelDataColumcount = columns;
 
-
-			//data word sequentieel per colom aargeleverd (voor alle nozzles 1 bit)
-			//colom is veelvoud 512 bit (dus 1024 voor 4 koppen)
+			//data is supplied sequentially per column (for all nozzles 1 bit)
+			//column is multiple 512 bit (so 1024 for 4 heads)
 			for (int i = 0; i < BufferPixelData.Length; i++) //512 bits per vert row
 			{
 				BufferPixelData[i] = 0; //white all
 			}
 
-			int lane = 0;
-			int buffer = 0;
-			FillBufferFromImage(lane,buffer,true);
+			const int lane = 0;
+			const int buffer = 0;
+			FillBufferFromImage(lane, buffer, true);
 
 			for (int col = 0; col < 150; col += 16) //512 bits per vert row
 			{
 				for (int i = 0; i < columnheightbytesize; i++) //512 bits per vert row
 				{
 					BufferPixelData[i + (col * columnheightbytesize)] = (byte)255; //dummy data
-
 				}
 			}
 
-			for (int x = 0; x < 150; x ++) //512 bits per vert row
+			for (int x = 0; x < 150; x++) //512 bits per vert row
 			{
-				Setpixel(x % columns,  x , BufferPixelData);
+				Setpixel(x % columns, x, BufferPixelData);
 			}
 
 			for (int i = 0; i < 2; i++)
 			{
-				SendMessage(0x03, RASTER_BUFFER_DATA((byte)((i % 4) + 1), 1, (uint) buffersize, 0,(uint) columnheightbytesize,(uint) columnheightbytesize, 0, 1, 0, 0, BufferPixelData));
+				SendMessage(0x03, RASTER_BUFFER_DATA((byte)((i % 4) + 1), 1, (uint)buffersize, 0, (uint)columnheightbytesize, (uint)columnheightbytesize, 0, 1, 0, 0, BufferPixelData));
 				Thread.Sleep(2000);
-				FillBufferFromImage(lane, i,true); //test; 2nd and up only with mage data
+				FillBufferFromImage(lane, i, true); //test; 2nd and up only with mage data
 			}
 
 			SendMessage(0x25);//Enable printing; should trigger  RASTER_BUFFER_READY_FOR_DATA (0x06)
@@ -360,9 +325,7 @@ namespace AG_Interface
 
 		internal Image GetLastBufferDateAsImage()
 		{
-			Bitmap BufferImage = new Bitmap(BufferPixelDataColumcount,BufferPixelDataColumsize);
-
-			//  BufferImage.SetPixel()
+			Bitmap BufferImage = new Bitmap(BufferPixelDataColumcount, BufferPixelDataColumsize);
 
 			for (int i = 0; i < BufferPixelDataColumsize; i++)
 			{
@@ -372,17 +335,16 @@ namespace AG_Interface
 				}
 			}
 			return BufferImage;
-
 		}
 
 		internal void InitializePrint()
 		{
-			byte heads = 4;
-			int columnheight = 600;
+			const byte heads = 4;
+			const int columnheight = 600;
 			int columns = FullBitmapWidth;// Debug Here: 6500 works.  7000 does not work
 			paddedcolums = columns + 50;
 
-			if (columnheight <= 512) columnheightboudrary = 512; else columnheightboudrary = 640;
+			columnheightboudrary = columnheight <= 512 ? 512 : 640;
 			columnheightbytesize = columnheightboudrary / 8;
 			int buffersize = columnheightbytesize * paddedcolums;
 			SendMessage(0x02, RASTER_BUFFER_CREATE(Buffers, buffersize, 0, 0, heads, columnheightboudrary / 32, columns, 300, false));
@@ -394,7 +356,6 @@ namespace AG_Interface
 			BufferPixelDataSize = buffersize;
 			CurrentBufferNumber = 0;
 			CurrentLaneNumber = 0;
-		  //  SendMessage(0x25);//stond uitEnable printing; should trigger  RASTER_BUFFER_READY_FOR_DATA (0x06)
 		}
 
 		internal void StartPrint()
@@ -408,16 +369,8 @@ namespace AG_Interface
 			stoparg[0] = 2;//stond op 2
 			Thread.Sleep(100);
 			SendMessage(0x16, stoparg);//stop printing
-/*
-			Thread.Sleep(100);
-			SendMessage(0x86);//empty buffers
-			stoparg[0] = 2;
-			Thread.Sleep(100);
-			SendMessage(0x16, stoparg);//stop printing
-			Thread.Sleep(100);
-			SendMessage(0x86);//empty buffers
-*/
 		}
+
 		internal void SetContrast(byte val)
 		{
 			//Contrast 0..15 (0 = 6.25%, 15=100%)
@@ -435,36 +388,72 @@ namespace AG_Interface
 			string readText = File.ReadAllText(programxmlpath);
 			byte[] XMLbytes = Encoding.ASCII.GetBytes(readText);
 			Thread.Sleep(100);
-			SendMessage((byte) programxmltype, XMLbytes);
+			SendMessage((byte)programxmltype, XMLbytes);
 		}
 
 		internal void TriggerPulseGenerator(byte generator)
 		{
-			//gererator:  0 or 1 for generator 0 or generator 1
+			//generator: 0 or 1 for generator 0 or generator 1
 			byte[] dataarg = new byte[1];
 			dataarg[0] = generator;
 			Thread.Sleep(100);
 			SendMessage(0x67, dataarg);
 		}
-		public int CurrentBufferNumber = 0;
-		private double  CurrentLaneNumber = 0;
-		private int BufferPixelDataSize = 0;
-		private readonly byte Buffers = 2;
-		public void UploadLaneNoWait(double lane,bool cal)
-		{
-		   //data word sequentieel per colom aangeleverd (voor alle nozzles 1 bit)
-		   //colom is veelvoud 128 bit (dus 640 voor 4 koppen)
-		   CurrentBufferNumber = 0;
-		   CurrentLaneNumber = lane;
-	 //     for (int i = 0; i < Buffers; i++)
-			{
-				FillNextPrintBufferRLE(cal);
-				Thread.Sleep(200);
-			}
-		   Thread.Sleep(100);
 
+		internal void SetOutputChannel(byte channel, byte val)
+		{
+			//generator: 0 or 1 for generator 0 or generator 1
+			byte[] dataarg = new byte[2];
+			dataarg[0] = channel;
+			dataarg[1] = val;
+			Thread.Sleep(100);
+			SendMessage(0x21, dataarg);
 		}
 
+		[StructLayout(LayoutKind.Sequential, Pack = 1)]
+		public struct BIDIR_CONFIG_MSG
+		{
+			public byte modeEnable;
+			public short inputSelect;
+			public byte reverseStateSelect;
+			public uint Pen_A_SensorDelta;
+			public uint Pen_B_SensorDelta;
+			public uint Pen_C_SensorDelta;
+			public uint Pen_D_SensorDelta;
+		}
+
+		internal void SetBidirConfig(byte enable, byte input, byte reverseState, uint Pen_A_Sensor, uint Pen_B_Sensor, uint Pen_C_Sensor, uint Pen_D_Sensor)
+		{
+			BIDIR_CONFIG_MSG cnfmsg = new BIDIR_CONFIG_MSG
+			{
+				modeEnable = enable,
+				inputSelect = input,
+				reverseStateSelect = reverseState,
+				Pen_A_SensorDelta = Pen_A_Sensor,
+				Pen_B_SensorDelta = Pen_B_Sensor,
+				Pen_C_SensorDelta = Pen_C_Sensor,
+				Pen_D_SensorDelta = Pen_D_Sensor
+			};
+			byte[] msgdata = StructToArray(cnfmsg);
+			Thread.Sleep(100);
+			SendMessage(0xB8, msgdata);
+		}
+
+		public int CurrentBufferNumber = 0;
+		private double CurrentLaneNumber = 0;
+		private int BufferPixelDataSize = 0;
+		private readonly byte Buffers = 2;
+		public void UploadLaneNoWait(double lane, bool cal)
+		{
+			//data is supplied sequentially per column (for all nozzles 1 bit)
+			//column is multiple 512 bit (so 1024 for 4 heads)			
+			CurrentBufferNumber = 0;
+			CurrentLaneNumber = lane;
+			FillNextPrintBufferRLE(cal);
+			Thread.Sleep(200);
+		}
+
+		internal bool PageSendingInProgress = false;
 		internal void FillNextPrintBuffer(bool calibrationlines)
 		{
 			for (int i = 0; i < BufferPixelData.Length; i++) BufferPixelData[i] = 0; //white all
@@ -472,6 +461,7 @@ namespace AG_Interface
 
 			if (printabledata)
 			{
+				PageSendingInProgress = true;
 				SendMessage(0x03, RASTER_BUFFER_DATA((byte)((CurrentBufferNumber % Buffers) + 1), 1, (uint)BufferPixelDataSize, 0, (uint)columnheightbytesize, (uint)columnheightbytesize, 0, 1, 0, 0, BufferPixelData));
 				CurrentBufferNumber++;
 			}
@@ -479,25 +469,26 @@ namespace AG_Interface
 
 		internal void FillNextPrintBufferRLE(bool calibrationlines)
 		{
-			for (int i = 0; i < BufferPixelData.Length; i++) BufferPixelData[i] = 0; //white all
-			bool printabledata = true;
-		//    if ((CurrentBufferNumber % Buffers) == 0)
+			for (int i = 0; i < BufferPixelData.Length; i++)
+				BufferPixelData[i] = 0; //white all
+			const bool printabledata = true;
 			FillBufferFromImage(CurrentLaneNumber, 0, calibrationlines/* CurrentBufferNumber % Buffers*/); //test; 2nd and up only with mage data
-			byte [] BufferPixelDataRLE=CompressBufferRLE32(BufferPixelData);
+			byte[] BufferPixelDataRLE = CompressBufferRLE32(BufferPixelData);
 			if (printabledata)
 			{
+				PageSendingInProgress = true;
 				SendMessage(0x81, RASTER_BUFFER_DATA((byte)((CurrentBufferNumber % Buffers) + 1), 1, (uint)BufferPixelDataSize, 0, (uint)columnheightbytesize, (uint)columnheightbytesize, 0, 1, 0, 0, BufferPixelDataRLE));
 				CurrentBufferNumber++;
 			}
 			CurrentLaneNumber++;
 		}
 
-		private byte [] CompressBufferRLE32(byte[] inbuffer)
+		private byte[] CompressBufferRLE32(byte[] inbuffer)
 		{
 			//make 32 bit int, msb in first byte
-			uint[] intArray = new uint[(inbuffer.Length / 4)];
-			for (int i = 0; i < inbuffer.Length; i += 4) intArray[i / 4] = (uint)IPAddress.HostToNetworkOrder(BitConverter.ToInt32(inbuffer, i));
-
+			uint[] intArray = new uint[inbuffer.Length / 4];
+			for (int i = 0; i < inbuffer.Length; i += 4)
+				intArray[i / 4] = (uint)IPAddress.HostToNetworkOrder(BitConverter.ToInt32(inbuffer, i));
 
 			uint trackindex = 0;
 			uint newdatavalue;
@@ -521,49 +512,43 @@ namespace AG_Interface
 				uint count00000000 = 0;
 				while ((t_trackindex < intArray.Length) && (intArray[t_trackindex++] == 0x00000000)) count00000000++;
 
-
 				if (countffffffff >= 3)
 				{
 					//compress as ffffffff
 					trackindex += countffffffff;
-					addRLE32Array(0xC0000000 | countffffffff, true);
+					AddRLE32Array(0xC0000000 | countffffffff, true);
+				}
+				else if (count00000000 >= 3)
+				{
+					//compress as 00000000
+					trackindex += count00000000;
+					AddRLE32Array(0x80000000 | count00000000, true);
 				}
 				else
-					if (count00000000 >= 3)
-					{
-						//compress as 00000000
-						trackindex += count00000000;
-						addRLE32Array(0x80000000 | count00000000, true);
-					}
-					else
-					{
-						//add to uncompressed
-						addRLE32Array(newdatavalue, false);
-						trackindex++;
-					}
-
+				{
+					//add to uncompressed
+					AddRLE32Array(newdatavalue, false);
+					trackindex++;
+				}
 			}
-			byte[] CompressedByteArray = new byte[RLE32BufferLen*4];
-			uint CompressedByteArrayIndex=0;
-			for(int i=0;i<RLE32BufferLen;i++)
+			byte[] CompressedByteArray = new byte[RLE32BufferLen * 4];
+			uint CompressedByteArrayIndex = 0;
+			for (int i = 0; i < RLE32BufferLen; i++)
 			{
 				byte[] IntBytes = BitConverter.GetBytes((uint)IPAddress.HostToNetworkOrder((int)RLE32Buffer[i]));
-				for(int j=0;j<4;j++)
+				for (int j = 0; j < 4; j++)
 				{
 					CompressedByteArray[CompressedByteArrayIndex++] = IntBytes[j];
 				}
 			}
-
-
-
 			return CompressedByteArray;
 		}
 
-		readonly uint[] RLE32Buffer = new uint[10000000];
-		uint RLE32Buffer_subhead = 0xffffffff;
-		uint RLE32Buffer_current = 0;
-		uint RLE32BufferLen = 0;
-		private void addRLE32Array(uint val, bool compressed)
+		private readonly uint[] RLE32Buffer = new uint[10000000];
+		private uint RLE32Buffer_subhead = 0xffffffff;
+		private uint RLE32Buffer_current = 0;
+		private uint RLE32BufferLen = 0;
+		private void AddRLE32Array(uint val, bool compressed)
 		{
 			if (compressed)
 			{
@@ -589,6 +574,7 @@ namespace AG_Interface
 		{
 			try
 			{
+				PageSendingInProgress = false;
 				tcpClient = new TcpClient(nServer, nPort)
 				{
 					NoDelay = true,
@@ -598,22 +584,20 @@ namespace AG_Interface
 					ReceiveBufferSize = 4000
 				};
 				networkStream = tcpClient.GetStream();
-			   return tcpClient.Connected;
+				return tcpClient.Connected;
 			}
 			catch { }
 			return false;
-
 		}
 
-		AGMessage currentmessage = null;
+		private AGMessage currentmessage = null;
 		private readonly byte[] Header = new byte[8];
 		public int MessageNumOfBytes = 0;
 		public int MessageEtx = 0;
 		internal AGMessage ReadMessage(NetworkStream t_networkStream)
 		{
-
-			if (!CanReadByte()) return null;
-
+			if (!CanReadByte())
+				return null;
 
 			t_networkStream.Read(Header, 0, 8);//Always 8
 
@@ -635,10 +619,9 @@ namespace AG_Interface
 				}
 				int MessageEtx = t_networkStream.ReadByte();
 
-
 				if (MessageEtx == 0x03)
 				{
-					if (ListenForMessage == currentmessage.MessageMsgID)  FoundMessage = true;
+					if (ListenForMessage == currentmessage.MessageMsgID) FoundMessage = true;
 					return currentmessage;
 				}
 				else
@@ -646,22 +629,21 @@ namespace AG_Interface
 					return null;
 				}
 			}
-
 			else
 			{
-
 				//out of sync?
 				return null;
 			}
 		}
 
-		readonly int ListenForMessage = -1;
-		bool FoundMessage = false;
+		private readonly int ListenForMessage = -1;
+		private bool FoundMessage = false;
 
 		public void SendToAll(byte[] b)
 		{
 			_SendToAll(b, b.Length);
 		}
+
 		private void _SendToAll(byte[] b, int iLength)
 		{
 			try
@@ -670,8 +652,7 @@ namespace AG_Interface
 			}
 			catch
 			{
-				string MessageString = "TCP Port Write Exception";
-				infobox.Items.Add(MessageString);
+				infobox.Items.Add("TCP Port Write Exception");
 			}
 		}
 
@@ -705,22 +686,20 @@ namespace AG_Interface
 			}
 		}
 
-
-
-		public byte[] CodeMessage(byte ID,byte[] data)
+		public byte[] CodeMessage(byte ID, byte[] data)
 		{
 			int n = 0;
-			if(data!=null) n= data.Length;
+			if (data != null) n = data.Length;
 			int messagelen = n + 4;
 			byte[] message = new byte[5 + messagelen];
-			byte checksum = 0;
+			const byte checksum = 0;
 
 			int i = 0;
 			message[i++] = 0x02;
 			message[i++] = (byte)(messagelen >> 24);
 			message[i++] = (byte)(messagelen >> 16);
-			message[i++] = (byte)(messagelen >>  8);
-			message[i++] = (byte)(messagelen      );
+			message[i++] = (byte)(messagelen >> 8);
+			message[i++] = (byte)(messagelen);
 			message[i++] = checksum;
 			message[i++] = TransmitSequence++;
 			message[i++] = ID;
@@ -733,9 +712,9 @@ namespace AG_Interface
 			return message;
 		}
 
-		public void SendMessage(byte ID,byte[] messagedata)
+		public void SendMessage(byte ID, byte[] messagedata)
 		{
-			SendToAll(CodeMessage(ID,messagedata));
+			SendToAll(CodeMessage(ID, messagedata));
 			string MessageString = "Sent ID:" + ID.ToString("X") + ":data";
 			infobox.Items.Add(MessageString);
 		}
@@ -745,12 +724,7 @@ namespace AG_Interface
 			SendToAll(CodeMessage(ID, null));
 			string MessageString = "Sent ID:" + ID.ToString("X");
 			infobox.Items.Add(MessageString);
-
 		}
-
-
-
-
 	}
 
 	public class AGMessage

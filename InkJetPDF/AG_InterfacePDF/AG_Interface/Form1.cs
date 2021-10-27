@@ -12,12 +12,12 @@ namespace AG_Interface
 {
 	public partial class Form1 : Form
 	{
-		ArrayGraphicsInterface AGI;
+		private ArrayGraphicsInterface AGI;
 		private PDFConvert converter = null;// = new PDFConvert();
 		public Form1()
 		{
 			InitializeComponent();
-			listBox1.Items.Add("InkJet Compatible to AVMOM V2.7.2.00");
+			listBox1.Items.Add("InkJet Compatible to AVMOM V2.7.4.06");
 			OpenAGPrinthead_Click(this, null);
 		}
 
@@ -73,22 +73,23 @@ namespace AG_Interface
 			AVPrintIPCObject = (AVPrintIPC)AVPrintIPC.thisAVPrintIPC;
 
 			if (AVPrintIPCObject == null)
+			{
 				IPCStatus.Text = "null";
+			}
 			else
 			{
 				AVPrintIPCObject.HandleTasks(this);
 				IPCStatus.Text = AVPrintIPCObject.GetLane().ToString();
 			}
-		
+
 			//AGI interface handling
 			try
 			{
-				AGMessage message = null ;
-				message = AGI.ReadMessage(AGI.networkStream);
+				AGMessage message = AGI.ReadMessage(AGI.networkStream);
 
-				if(message!=null)
+				if (message != null)
 				{
-					string MessageString =" ->Receive ID:"+ message.MessageMsgID.ToString("X") + ":";
+					string MessageString = " ->Receive ID:" + message.MessageMsgID.ToString("X") + ":";
 
 					if (message.MessageMsgID == 0x34)//error
 					{
@@ -97,7 +98,7 @@ namespace AG_Interface
 						for (int i = 0; i < n; i++)
 						{
 							int c = message.MessageData[i];
-							if(c!=0) MessageString += Char.ConvertFromUtf32(message.MessageData[i]);
+							if (c != 0) MessageString += Char.ConvertFromUtf32(message.MessageData[i]);
 						}
 						listBox1.Items.Add(MessageString);
 					}
@@ -106,15 +107,17 @@ namespace AG_Interface
 						MessageString = " -> ACK of ID:" + message.MessageData[0].ToString("X") + " ";
 						string lastmsg = listBox1.Items[listBox1.Items.Count - 1].ToString();
 						listBox1.Items.RemoveAt(listBox1.Items.Count - 1);
-						listBox1.Items.Add(lastmsg+MessageString);
-					}   //87	
+						listBox1.Items.Add(lastmsg + MessageString);
+					}   //87
 					else if (message.MessageMsgID == 0x87)//page loaded
-					{			
-						MessageString = " ->0x86 Page loaded, Ready to Print Page";
+					{
+						AGI.PageSendingInProgress = false;
+
+						MessageString = " ->0x87 Page loaded, Ready to Print Page";
 						listBox1.Items.Add(MessageString);
 					}
 					else if (message.MessageMsgID == 0x26)//page loaded
-					{		
+					{
 						MessageString = " ->0x26 Ready to Print";
 						listBox1.Items.Add(MessageString);
 					}
@@ -122,12 +125,12 @@ namespace AG_Interface
 					{
 						MessageString = " ->0x0A Uniditified Message";
 						listBox1.Items.Add(MessageString);
-					}   //87	
+					}   //87
 					else if (message.MessageMsgID == 0x06)//next buffer fillable
 					{
 						int encoderindex = 22;
 						encoder = message.MessageData[encoderindex++];
-						encoder = (encoder<<8) + message.MessageData[encoderindex++];
+						encoder = (encoder << 8) + message.MessageData[encoderindex++];
 						encoder = (encoder << 8) + message.MessageData[encoderindex++];
 						encoder = (encoder << 8) + message.MessageData[encoderindex++];
 
@@ -149,14 +152,14 @@ namespace AG_Interface
 					else if (message.MessageMsgID == 0x59)//
 					{
 						int status = message.MessageData[3];
-						if(status==1)
-                        {
+						if (status == 1)
+						{
 							MessageString = " ->Sytem Ready To Print";
 						}
 						else
 						{
 							MessageString = " ->Sytem NOT Ready To Print";
-						}			
+						}
 						listBox1.Items.Add(MessageString);
 					}
 					else
@@ -169,21 +172,29 @@ namespace AG_Interface
 						}
 						listBox1.Items.Add(MessageString);
 					}
-					listBox1.TopIndex = listBox1.Items.Count-10 ;
-
+					listBox1.TopIndex = listBox1.Items.Count - 10;
 				}
 			}
 			catch { }
 			StatusPingIntervalCounter++;
-			if(StatusPingIntervalCounter>500)
-            {
+			if (StatusPingIntervalCounter > 500)
+			{
 				StatusPingIntervalCounter = 0;
-				if(StatusPingCB.Checked)
-                {
+				if (StatusPingCB.Checked)
+				{
 					AGI.SendMessage(0x58);//Status Ping
 				}
-
 			}
+
+			Uploading.Checked = AGI.PageSendingInProgress;
+		}
+		internal bool GetPageSendingInProgress()
+		{
+			return AGI.PageSendingInProgress;
+		}
+		internal bool SetPageSendingInProgress()
+		{
+			return AGI.PageSendingInProgress = true;
 		}
 
 		internal void SetContrast(int req_contrast)
@@ -204,7 +215,7 @@ namespace AG_Interface
 
 		internal void StartScanLane(int req_printlane)
 		{
-			AGI.UploadLaneNoWait(req_printlane,AVPrintIPCObject.Calibrationlines);
+			AGI.UploadLaneNoWait(req_printlane, AVPrintIPCObject.Calibrationlines);
 		}
 
 		internal void ProgramXML(int programxmltype, string programxmlpath)
@@ -217,9 +228,9 @@ namespace AG_Interface
 			AGI = new ArrayGraphicsInterface(listBox1, ipadress);
 		}
 
-		internal void StartScanLane(int req_printlane,bool cal)
+		internal void StartScanLane(int req_printlane, bool cal)
 		{
-			AGI.UploadLaneNoWait(req_printlane,cal);
+			AGI.UploadLaneNoWait(req_printlane, cal);
 		}
 
 		internal void DeactivateHead()
@@ -232,7 +243,7 @@ namespace AG_Interface
 			// throw new NotImplementedException();
 		}
 
-		internal int ImageHeight { get{ return AGI.FullBitmapHeight; } }
+		internal int ImageHeight { get { return AGI.FullBitmapHeight; } }
 
 		internal int ImageWidth { get { return AGI.FullBitmapWidth; } }
 
@@ -244,10 +255,10 @@ namespace AG_Interface
 
 		internal void FlipImage(RotateFlipType type)
 		{
-			string input = "flip";
+			const string input = "flip";
 			int extensioncounter = 0;
 			string output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input, extensioncounter, extension);
-            string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
+			string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
 
 			while (File.Exists(output))
 			{
@@ -261,7 +272,7 @@ namespace AG_Interface
 				}
 				extensioncounter++; //do not use the just deleted file
 				output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input, extensioncounter, extension);
-                outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
+				outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input + "small", extensioncounter, extension);
 			}
 			FileInfo bitmapfilenameinfo = new FileInfo(output);
 
@@ -271,46 +282,48 @@ namespace AG_Interface
 				AGI.SetFullBitmap = FullBitmap;
 				FullBitmap.Save(output);
 			}
-            if (AVPrintIPCObject != null)
-            {
-                AVPrintIPCObject.ConvertedFile = output;
-                AVPrintIPCObject.ConvertedFileSmall = outputsmall;
-            }
+			if (AVPrintIPCObject != null)
+			{
+				AVPrintIPCObject.ConvertedFile = output;
+				AVPrintIPCObject.ConvertedFileSmall = outputsmall;
+			}
 			pictureBox1.Image = FullBitmap;
 			converter = null;
 
-            double w = FullBitmap.Width;
-            double h = FullBitmap.Height;
-            if ((w + h) > 6000)
-            {
-                double scaledown = (w + h) / 6000;
-                w = w / scaledown;
-                h = h / scaledown;
+			double w = FullBitmap.Width;
+			double h = FullBitmap.Height;
+			if ((w + h) > 6000)
+			{
+				double scaledown = (w + h) / 6000;
+				w /= scaledown;
+				h /= scaledown;
+			}
 
-            }
-
-            Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
-            smallbm.Save(outputsmall);
-
+			Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
+			smallbm.Save(outputsmall);
 		}
 
-		public void CreateLRCrosses(string crossesstring, double printwidth, double printheight,int crosstype)
+		public void CreateLRCrosses(string crossesstring, double printwidth, double printheight, int crosstype)
 		{
-			bool LRmarks = false;
-			int dpixy = 300; //the print of the marks is too large when 300 dpi is used! (maybe the converter uses smaller DPI)<<<Change this
-			int pixelsx = (int) (printwidth * dpixy / 25400);
+			const bool LRmarks = false;
+			const int dpixy = 300; //the print of the marks is too large when 300 dpi is used! (maybe the converter uses smaller DPI)<<<Change this
+			int pixelsx = (int)(printwidth * dpixy / 25400);
 			int pixelsy = (int)(printheight * dpixy / 25400);
-			FullBitmap = new Bitmap(pixelsx, pixelsy,System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+			FullBitmap = new Bitmap(pixelsx, pixelsy, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 			for (int i = 0; i < pixelsx; i++)
+			{
 				for (int j = 0; j < pixelsy; j++)
+				{
 					FullBitmap.SetPixel(i, j, Color.White);
+				}
+			}
 			//now draw the crosses
 
-			int crosssize=75;
-			int x1=crosssize;
-			int y1= pixelsy/2;
-			int x2=pixelsx-crosssize;
-			int y2= pixelsy/2;
+			const int crosssize = 75;
+			const int x1 = crosssize;
+			int y1 = pixelsy / 2;
+			int x2 = pixelsx - crosssize;
+			int y2 = pixelsy / 2;
 			if (crosstype == 1)
 			{
 				DrawEasyregcrossat(x1, y1, crosssize, FullBitmap);
@@ -332,14 +345,13 @@ namespace AG_Interface
 			Graphics g = Graphics.FromImage(FullBitmap);
 			//Rectangle printrect = new Rectangle(x1 + (crosssize * 4), y2 - (crosssize), crosssize * 10, crosssize*2);
 			//test if this is mirrored
-			Rectangle printrect = new Rectangle(x1 + (crosssize * 4), y2 - (crosssize), crosssize * 10, crosssize * 2);
+			Rectangle printrect = new Rectangle(x1 + (crosssize * 4), y2 - crosssize, crosssize * 10, crosssize * 2);
 
 			g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 			g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 			g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-			g.DrawString(crossesstring,new Font("Tahoma",crosssize),Brushes.Black,printrect);
+			g.DrawString(crossesstring, new Font("Tahoma", crosssize), Brushes.Black, printrect);
 			g.Flush();
-
 
 			AGI.SetFullBitmap = FullBitmap;
 			pictureBox1.Image = FullBitmap;
@@ -359,7 +371,7 @@ namespace AG_Interface
 
 		internal void Spit()
 		{
-		  //  throw new NotImplementedException();
+			//  throw new NotImplementedException();
 		}
 
 		private void StartBtn_Click(object sender, EventArgs e)
@@ -376,7 +388,6 @@ namespace AG_Interface
 		{
 			AGI.SendMessage(0x16);
 		}
-
 
 		public string PDFFilename = "C:\\W8 AVMOM\\W8 AVMOM\\Images\\20001 Flexologic.pdf";
 		private void PDFConvert_Click(object sender, EventArgs e)
@@ -449,7 +460,7 @@ namespace AG_Interface
 
 			int extensioncounter = 0;
 			string output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
-            string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
+			string outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
 
 			while (File.Exists(output))
 			{
@@ -463,7 +474,7 @@ namespace AG_Interface
 				}
 				extensioncounter++; //do not use the just deleted file
 				output = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name, extensioncounter, extension);
-                outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
+				outputsmall = string.Format("{0}\\{1}{2}{3}", conversiondirectory, input.Name + "small", extensioncounter, extension);
 			}
 			FileInfo bitmapfilenameinfo = new FileInfo(output);
 
@@ -483,28 +494,26 @@ namespace AG_Interface
 
 			if (Converted)
 			{
-                if (AVPrintIPCObject != null)
-                {
-                    AVPrintIPCObject.ConvertedFile = output;
-                    AVPrintIPCObject.ConvertedFileSmall = outputsmall;
-                }
+				if (AVPrintIPCObject != null)
+				{
+					AVPrintIPCObject.ConvertedFile = output;
+					AVPrintIPCObject.ConvertedFileSmall = outputsmall;
+				}
 				FullBitmap = new Bitmap(output);
 				pictureBox1.Image = FullBitmap;
 				FullBitmap.GetPixel(10, 20);//a test..
 
-                double w = FullBitmap.Width;
-                double h = FullBitmap.Height;
-                if ((w + h) > 6000)
-                {
-                    double scaledown = (w + h) / 6000;
-                    w = w / scaledown;
-                    h = h / scaledown;
+				double w = FullBitmap.Width;
+				double h = FullBitmap.Height;
+				if ((w + h) > 6000)
+				{
+					double scaledown = (w + h) / 6000;
+					w /= scaledown;
+					h /= scaledown;
+				}
 
-                }
-
-                Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
-                smallbm.Save(outputsmall);
-
+				Bitmap smallbm = new Bitmap(FullBitmap, (int)w, (int)h);
+				smallbm.Save(outputsmall);
 			}
 		}
 
@@ -520,7 +529,7 @@ namespace AG_Interface
 
 		private void SetContrastBtn_Click(object sender, EventArgs e)
 		{
-			byte contrast = (byte) ContrastValueUpDown.Value;
+			byte contrast = (byte)ContrastValueUpDown.Value;
 			AGI.SetContrast(contrast);
 		}
 
@@ -528,10 +537,21 @@ namespace AG_Interface
 		{
 			AGI.TriggerPulseGenerator(0);
 		}
-
+		private byte toggle = 1;
 		private void TriggerGenerator1_Click(object sender, EventArgs e)
 		{
-			AGI.TriggerPulseGenerator(1);
+			//AGI.TriggerPulseGenerator(1);
+			AGI.SetOutputChannel(1, toggle); //debug
+			toggle = toggle == 0 ? (byte)1 : (byte)0;
+		}
+
+		public void SetPrintDirNormal()
+		{
+			AGI.SetOutputChannel(1, 0);
+		}
+		public void SetPrintDirReverse()
+		{
+			AGI.SetOutputChannel(1, 1);
 		}
 	}
 }
